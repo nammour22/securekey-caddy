@@ -1,308 +1,269 @@
 import { motion } from "framer-motion";
-import { IconArrowLeft, IconCopy, IconRefresh, IconDeviceFloppy } from "@tabler/icons-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  IconCopy,
+  IconSettings,
+  IconShieldCheck,
+  IconPlus,
+  IconLock,
+} from "@tabler/icons-react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const Generator = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [passwordLength, setPasswordLength] = useState(16);
+  const [includeUppercase, setIncludeUppercase] = useState(true);
+  const [includeNumbers, setIncludeNumbers] = useState(true);
+  const [includeSymbols, setIncludeSymbols] = useState(true);
   const [password, setPassword] = useState("");
-  const [length, setLength] = useState([12]);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [strength, setStrength] = useState("Weak");
+  const [isCopied, setIsCopied] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [accountName, setAccountName] = useState("");
-  const [options, setOptions] = useState({
-    uppercase: true,
-    lowercase: true,
-    numbers: true,
-    symbols: true,
-  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    generatePassword();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordLength, includeUppercase, includeNumbers, includeSymbols]);
+
+  useEffect(() => {
+    updateStrengthIndicator();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [password]);
 
   const generatePassword = () => {
-    const charset = {
-      uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      lowercase: 'abcdefghijklmnopqrstuvwxyz',
-      numbers: '0123456789',
-      symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?'
-    };
+    let characterList = "";
 
-    let characters = '';
-    if (options.uppercase) characters += charset.uppercase;
-    if (options.lowercase) characters += charset.lowercase;
-    if (options.numbers) characters += charset.numbers;
-    if (options.symbols) characters += charset.symbols;
-
-    if (characters === '') {
-      toast({
-        title: "Error",
-        description: "Please select at least one character type",
-        variant: "destructive",
-      });
-      return;
+    if (includeUppercase) {
+      characterList += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    }
+    if (includeNumbers) {
+      characterList += "0123456789";
+    }
+    if (includeSymbols) {
+      characterList += "!@#$%^&*()_+~`|}{[]:;?><,./-=";
     }
 
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length[0]; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    if (!characterList) {
+      characterList = "abcdefghijklmnopqrstuvwxyz";
+    } else {
+      characterList += "abcdefghijklmnopqrstuvwxyz";
     }
 
-    setPassword(result);
+    let newPassword = "";
+    for (let i = 0; i < passwordLength; i++) {
+      const characterIndex = Math.round(Math.random() * characterList.length);
+      newPassword += characterList.charAt(characterIndex);
+    }
+    setPassword(newPassword);
+    setIsCopied(false);
   };
 
   const copyToClipboard = () => {
-    if (password) {
-      navigator.clipboard.writeText(password);
-      toast({
-        title: "Copied!",
-        description: "Password copied to clipboard",
-      });
-    }
+    navigator.clipboard.writeText(password);
+    setIsCopied(true);
+    toast({
+      title: "Copied!",
+      description: "Password copied to clipboard",
+    });
   };
 
-  const getPasswordStrength = () => {
-    if (!password) return { text: '', color: '' };
-    
-    const strength = {
-      0: { text: 'Very Weak', color: 'bg-red-500' },
-      1: { text: 'Weak', color: 'bg-orange-500' },
-      2: { text: 'Medium', color: 'bg-yellow-500' },
-      3: { text: 'Strong', color: 'bg-green-500' },
-      4: { text: 'Very Strong', color: 'bg-green-600' },
-    };
-
-    let score = 0;
-    if (length[0] >= 12) score++;
-    if (options.uppercase && options.lowercase) score++;
-    if (options.numbers) score++;
-    if (options.symbols) score++;
-
-    return strength[score as keyof typeof strength];
+  const updateStrengthIndicator = () => {
+    let strengthValue = "Weak";
+    if (password.length >= 8) {
+      strengthValue = "Medium";
+    }
+    if (
+      password.length >= 12 &&
+      ((includeUppercase && /[A-Z]/.test(password)) ||
+        (includeNumbers && /[0-9]/.test(password)) ||
+        (includeSymbols && /[^a-zA-Z0-9]/.test(password)))
+    ) {
+      strengthValue = "Strong";
+    }
+    setStrength(strengthValue);
   };
 
   const handleSavePassword = () => {
-    if (!accountName.trim()) {
+    setIsDialogOpen(true);
+  };
+
+  const savePassword = () => {
+    if (!accountName) {
       toast({
         title: "Error",
-        description: "Please enter an account name",
-        variant: "destructive",
+        description: "Account name is required",
       });
       return;
     }
 
-    // Get existing passwords from localStorage or initialize empty array
-    const existingPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
-    
-    // Add new password
+    const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
     const newPassword = {
       id: Date.now(),
       account: accountName,
       password: password,
       createdAt: new Date().toISOString(),
     };
-    
-    localStorage.setItem("passwords", JSON.stringify([...existingPasswords, newPassword]));
-    
-    toast({
-      title: "Success",
-      description: "Password saved successfully",
-    });
-    
-    setSaveDialogOpen(false);
+    savedPasswords.push(newPassword);
+    localStorage.setItem("passwords", JSON.stringify(savedPasswords));
+    setIsDialogOpen(false);
     setAccountName("");
-    
-    // Navigate to vault
-    navigate("/vault");
+    toast({
+      title: "Saved!",
+      description: "Password saved to vault",
+    });
   };
 
   return (
-    <div className="min-h-screen p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl mx-auto"
-      >
-        <Link 
-          to="/" 
-          className="inline-flex items-center text-sage-500 hover:text-sage-600 mb-6"
-        >
-          <IconArrowLeft className="w-5 h-5 mr-2" />
-          Back to Home
-        </Link>
+    <div className="min-h-screen bg-[#F8F9FA]">
+      {/* Sidebar */}
+      <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
+        <div className="flex items-center space-x-2 mb-8">
+          <IconLock className="w-6 h-6 text-sage-500" />
+          <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
+        </div>
         
-        <div className="glass-panel rounded-xl p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Password Generator
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Generate secure, random passwords with custom requirements.
-          </p>
-          
-          <div className="space-y-6">
-            {/* Password Display */}
-            <div className="relative">
-              <input
-                type="text"
-                value={password}
-                readOnly
-                placeholder="Click generate to create password"
-                className="w-full p-4 bg-gray-50 rounded-lg text-lg font-mono"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={generatePassword}
-                  className="hover:bg-gray-200"
-                >
-                  <IconRefresh className="w-5 h-5" />
-                </Button>
+        <nav className="space-y-2">
+          <Link 
+            to="/"
+            className="block w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+          >
+            All Items
+          </Link>
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      <div className="ml-64 p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Password Generator
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Generate secure, random passwords with custom requirements.
+            </p>
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Input
+                  type="text"
+                  value={password}
+                  readOnly
+                  className="flex-1 bg-gray-100 border-gray-300 rounded-md px-4 py-2 text-gray-700 mr-4"
+                />
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={copyToClipboard}
-                  disabled={!password}
                   className="hover:bg-gray-200"
                 >
-                  <IconCopy className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSaveDialogOpen(true)}
-                  disabled={!password}
-                  className="hover:bg-gray-200"
-                >
-                  <IconDeviceFloppy className="w-5 h-5" />
+                  <IconCopy className="w-4 h-4" />
                 </Button>
               </div>
-            </div>
 
-            {/* Password Strength Indicator */}
-            {password && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Password Strength:</span>
-                  <span>{getPasswordStrength().text}</span>
+              <div className="flex items-center justify-between">
+                <div className="text-gray-700 font-medium">Password Strength:</div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-sm text-gray-500">{strength}</span>
                 </div>
-                <div className={`h-2 rounded-full ${getPasswordStrength().color}`} />
               </div>
-            )}
 
-            {/* Length Slider */}
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium">Password Length</span>
-                <span className="text-sm text-gray-500">{length[0]} characters</span>
+              <div className="space-y-2">
+                <div className="text-gray-700 font-medium">Options:</div>
+                <div className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      checked={includeUppercase}
+                      onChange={(e) => setIncludeUppercase(e.target.checked)}
+                      className="rounded-sm text-sage-500 focus:ring-sage-500"
+                    />
+                    <span className="text-sm text-gray-500">Include Uppercase</span>
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      checked={includeNumbers}
+                      onChange={(e) => setIncludeNumbers(e.target.checked)}
+                      className="rounded-sm text-sage-500 focus:ring-sage-500"
+                    />
+                    <span className="text-sm text-gray-500">Include Numbers</span>
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      checked={includeSymbols}
+                      onChange={(e) => setIncludeSymbols(e.target.checked)}
+                      className="rounded-sm text-sage-500 focus:ring-sage-500"
+                    />
+                    <span className="text-sm text-gray-500">Include Symbols</span>
+                  </label>
+                </div>
               </div>
-              <Slider
-                value={length}
-                onValueChange={setLength}
-                max={32}
-                min={4}
-                step={1}
-                className="w-full"
-              />
+
+              <div>
+                <div className="text-gray-700 font-medium">Password Length:</div>
+                <input
+                  type="range"
+                  min="8"
+                  max="32"
+                  value={passwordLength}
+                  onChange={(e) => setPasswordLength(Number(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="text-sm text-gray-500 mt-1">
+                  Length: {passwordLength} characters
+                </div>
+              </div>
+
+              <Button className="bg-sage-500 hover:bg-sage-600" onClick={handleSavePassword}>
+                <IconPlus className="w-4 h-4 mr-2" />
+                Save Password
+              </Button>
             </div>
-
-            {/* Character Types */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Character Types</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={options.uppercase}
-                    onCheckedChange={(checked) => 
-                      setOptions(prev => ({ ...prev, uppercase: checked === true }))
-                    }
-                  />
-                  <span>Uppercase (A-Z)</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={options.lowercase}
-                    onCheckedChange={(checked) => 
-                      setOptions(prev => ({ ...prev, lowercase: checked === true }))
-                    }
-                  />
-                  <span>Lowercase (a-z)</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={options.numbers}
-                    onCheckedChange={(checked) => 
-                      setOptions(prev => ({ ...prev, numbers: checked === true }))
-                    }
-                  />
-                  <span>Numbers (0-9)</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={options.symbols}
-                    onCheckedChange={(checked) => 
-                      setOptions(prev => ({ ...prev, symbols: checked === true }))
-                    }
-                  />
-                  <span>Symbols (!@#$...)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Generate Button */}
-            <Button 
-              onClick={generatePassword}
-              className="w-full bg-sage-500 hover:bg-sage-600 text-white"
-            >
-              Generate Password
-            </Button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Save Password Dialog */}
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Password</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="account">Account Name</Label>
-              <Input
-                id="account"
-                placeholder="e.g., Facebook, Twitter, Gmail..."
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <Input value={password} readOnly />
+      {isDialogOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+        >
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Save Password</h2>
+            <p className="text-gray-600 mb-6">
+              Enter an account name to save this password to your vault.
+            </p>
+            <Input
+              type="text"
+              placeholder="Account Name"
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              className="mb-4"
+            />
+            <div className="flex justify-end space-x-4">
+              <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="bg-sage-500 hover:bg-sage-600" onClick={savePassword}>
+                Save
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSavePassword}>
-              Save Password
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </motion.div>
+      )}
     </div>
   );
 };

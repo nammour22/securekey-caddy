@@ -1,17 +1,28 @@
-
 import { motion } from "framer-motion";
-import { IconArrowLeft, IconCopy, IconRefresh } from "@tabler/icons-react";
-import { Link } from "react-router-dom";
+import { IconArrowLeft, IconCopy, IconRefresh, IconDeviceFloppy } from "@tabler/icons-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const Generator = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [length, setLength] = useState([12]);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [accountName, setAccountName] = useState("");
   const [options, setOptions] = useState({
     uppercase: true,
     lowercase: true,
@@ -81,6 +92,41 @@ const Generator = () => {
     return strength[score as keyof typeof strength];
   };
 
+  const handleSavePassword = () => {
+    if (!accountName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an account name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get existing passwords from localStorage or initialize empty array
+    const existingPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
+    
+    // Add new password
+    const newPassword = {
+      id: Date.now(),
+      account: accountName,
+      password: password,
+      createdAt: new Date().toISOString(),
+    };
+    
+    localStorage.setItem("passwords", JSON.stringify([...existingPasswords, newPassword]));
+    
+    toast({
+      title: "Success",
+      description: "Password saved successfully",
+    });
+    
+    setSaveDialogOpen(false);
+    setAccountName("");
+    
+    // Navigate to vault
+    navigate("/vault");
+  };
+
   return (
     <div className="min-h-screen p-4">
       <motion.div
@@ -132,6 +178,15 @@ const Generator = () => {
                   className="hover:bg-gray-200"
                 >
                   <IconCopy className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSaveDialogOpen(true)}
+                  disabled={!password}
+                  className="hover:bg-gray-200"
+                >
+                  <IconDeviceFloppy className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -216,6 +271,38 @@ const Generator = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Save Password Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="account">Account Name</Label>
+              <Input
+                id="account"
+                placeholder="e.g., Facebook, Twitter, Gmail..."
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input value={password} readOnly />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePassword}>
+              Save Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

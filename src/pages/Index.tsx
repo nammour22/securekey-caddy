@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import PinSetup from "@/components/PinSetup";
 
 interface PasswordDetails {
   id: number;
@@ -59,6 +60,7 @@ const Index = () => {
   const [enteredPin, setEnteredPin] = useState("");
   const [tempSelectedPassword, setTempSelectedPassword] = useState<PasswordDetails | null>(null);
   const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
+  const [showPinSetup, setShowPinSetup] = useState(false);
 
   useEffect(() => {
     const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
@@ -74,11 +76,7 @@ const Index = () => {
     const storedPin = localStorage.getItem("vault_pin");
     
     if (!storedPin) {
-      toast({
-        title: "Error",
-        description: "Please set up your PIN first",
-        variant: "destructive",
-      });
+      setShowPinSetup(true);
       return;
     }
 
@@ -158,6 +156,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
+      {showPinSetup && (
+        <PinSetup onComplete={() => {
+          setShowPinSetup(false);
+          if (tempSelectedPassword) {
+            setSelectedPassword(tempSelectedPassword);
+          }
+        }} />
+      )}
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">

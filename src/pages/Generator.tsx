@@ -23,6 +23,12 @@ const Generator = () => {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
+  const getPasswordStrength = (length: number) => {
+    if (length > 16) return { label: "Very Strong", color: "bg-green-500" };
+    if (length > 10) return { label: "Strong", color: "bg-blue-500" };
+    return { label: "Medium", color: "bg-yellow-500" };
+  };
+
   const generatePassword = () => {
     let characterSet = "";
     if (includeUppercase) characterSet += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -113,18 +119,29 @@ const Generator = () => {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="mb-4">
-              <Label htmlFor="passwordLength" className="block text-sm font-medium text-gray-700">
+              <Label htmlFor="passwordLength" className="block text-sm font-medium text-gray-700 mb-1">
                 Password Length ({passwordLength})
               </Label>
-              <Slider
-                id="passwordLength"
-                defaultValue={[passwordLength]}
-                max={32}
-                min={8}
-                step={1}
-                onValueChange={(value) => setPasswordLength(value[0])}
-                className="mt-2"
-              />
+              <div className="space-y-2">
+                <Slider
+                  id="passwordLength"
+                  defaultValue={[passwordLength]}
+                  max={32}
+                  min={8}
+                  step={1}
+                  onValueChange={(value) => setPasswordLength(value[0])}
+                  className="mt-2"
+                />
+                <div className="h-2 rounded-full bg-gray-200">
+                  <div 
+                    className={`h-full rounded-full transition-all ${getPasswordStrength(passwordLength).color}`}
+                    style={{ width: `${(passwordLength / 32) * 100}%` }}
+                  />
+                </div>
+                <p className="text-sm text-gray-600">
+                  Strength: {getPasswordStrength(passwordLength).label}
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

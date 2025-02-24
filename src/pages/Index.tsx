@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { 
   IconPlus, 
@@ -131,247 +132,249 @@ const Index = () => {
             </Link>
           </div>
 
-      {/* Password Details Dialog */}
-      <Dialog open={!!selectedPassword} onOpenChange={() => {
-        setSelectedPassword(null);
-        setShowPassword(false);
-        setIsEditing(false);
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Edit Password Details" : "Password Details"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedPassword && (
-            <div className="space-y-4 py-4">
-              {isEditing ? (
-                <>
-                  <div className="space-y-2">
-                    <Label>Account Name</Label>
-                    <Input
-                      value={editDetails?.account || ""}
-                      onChange={(e) => setEditDetails(prev => prev ? ({
-                        ...prev,
-                        account: e.target.value
-                      }) : null)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    <Input
-                      value={editDetails?.username || ""}
-                      onChange={(e) => setEditDetails(prev => prev ? ({
-                        ...prev,
-                        username: e.target.value
-                      }) : null)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      value={editDetails?.email || ""}
-                      onChange={(e) => setEditDetails(prev => prev ? ({
-                        ...prev,
-                        email: e.target.value
-                      }) : null)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Textarea
-                      value={editDetails?.notes || ""}
-                      onChange={(e) => setEditDetails(prev => prev ? ({
-                        ...prev,
-                        notes: e.target.value
-                      }) : null)}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm text-gray-500">Account</Label>
-                      <p className="text-base">{selectedPassword.account}</p>
-                    </div>
-                    {selectedPassword.username && (
-                      <div>
-                        <Label className="text-sm text-gray-500">Username</Label>
-                        <div className="flex items-center justify-between">
-                          <p className="text-base">{selectedPassword.username}</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(selectedPassword.username!)}
-                          >
-                            <IconCopy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    {selectedPassword.email && (
-                      <div>
-                        <Label className="text-sm text-gray-500">Email</Label>
-                        <div className="flex items-center justify-between">
-                          <p className="text-base">{selectedPassword.email}</p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(selectedPassword.email!)}
-                          >
-                            <IconCopy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <Label className="text-sm text-gray-500">Password</Label>
-                      <div className="flex items-center justify-between">
+          {/* Password Details Dialog */}
+          <Dialog open={!!selectedPassword} onOpenChange={() => {
+            setSelectedPassword(null);
+            setShowPassword(false);
+            setIsEditing(false);
+          }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {isEditing ? "Edit Password Details" : "Password Details"}
+                </DialogTitle>
+              </DialogHeader>
+              
+              {selectedPassword && (
+                <div className="space-y-4 py-4">
+                  {isEditing ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Account Name</Label>
                         <Input
-                          type={showPassword ? "text" : "password"}
-                          value={selectedPassword.password}
-                          readOnly
+                          value={editDetails?.account || ""}
+                          onChange={(e) => setEditDetails(prev => prev ? ({
+                            ...prev,
+                            account: e.target.value
+                          }) : null)}
                         />
-                        <div className="flex space-x-2 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <IconEyeOff className="w-4 h-4" />
-                            ) : (
-                              <IconEye className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => copyToClipboard(selectedPassword.password)}
-                          >
-                            <IconCopy className="w-4 h-4" />
-                          </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Username</Label>
+                        <Input
+                          value={editDetails?.username || ""}
+                          onChange={(e) => setEditDetails(prev => prev ? ({
+                            ...prev,
+                            username: e.target.value
+                          }) : null)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input
+                          value={editDetails?.email || ""}
+                          onChange={(e) => setEditDetails(prev => prev ? ({
+                            ...prev,
+                            email: e.target.value
+                          }) : null)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Notes</Label>
+                        <Textarea
+                          value={editDetails?.notes || ""}
+                          onChange={(e) => setEditDetails(prev => prev ? ({
+                            ...prev,
+                            notes: e.target.value
+                          }) : null)}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm text-gray-500">Account</Label>
+                          <p className="text-base">{selectedPassword.account}</p>
                         </div>
+                        {selectedPassword.username && (
+                          <div>
+                            <Label className="text-sm text-gray-500">Username</Label>
+                            <div className="flex items-center justify-between">
+                              <p className="text-base">{selectedPassword.username}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(selectedPassword.username!)}
+                              >
+                                <IconCopy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {selectedPassword.email && (
+                          <div>
+                            <Label className="text-sm text-gray-500">Email</Label>
+                            <div className="flex items-center justify-between">
+                              <p className="text-base">{selectedPassword.email}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(selectedPassword.email!)}
+                              >
+                                <IconCopy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <Label className="text-sm text-gray-500">Password</Label>
+                          <div className="flex items-center justify-between">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              value={selectedPassword.password}
+                              readOnly
+                            />
+                            <div className="flex space-x-2 ml-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <IconEyeOff className="w-4 h-4" />
+                                ) : (
+                                  <IconEye className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => copyToClipboard(selectedPassword.password)}
+                              >
+                                <IconCopy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        {selectedPassword.notes && (
+                          <div>
+                            <Label className="text-sm text-gray-500">Notes</Label>
+                            <p className="text-base whitespace-pre-wrap">{selectedPassword.notes}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    {selectedPassword.notes && (
-                      <div>
-                        <Label className="text-sm text-gray-500">Notes</Label>
-                        <p className="text-base whitespace-pre-wrap">{selectedPassword.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </>
+                    </>
+                  )}
+                </div>
               )}
-            </div>
-          )}
-          
-          <DialogFooter className="flex justify-between">
-            <div>
-              {!isEditing && (
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDelete(selectedPassword!.id)}
-                >
-                  <IconTrash className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
-              )}
-            </div>
-            <div className="flex space-x-2">
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditDetails(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveEdit}>
-                    Save Changes
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setEditDetails(selectedPassword);
-                  }}
-                >
-                  <IconEdit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              )}
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              
+              <DialogFooter className="flex justify-between">
+                <div>
+                  {!isEditing && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDelete(selectedPassword!.id)}
+                    >
+                      <IconTrash className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  {isEditing ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+                          setEditDetails(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveEdit}>
+                        Save Changes
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setEditDetails(selectedPassword);
+                      }}
+                    >
+                      <IconEdit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-      {/* Password List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        {filteredPasswords.length === 0 ? (
-          <div className="p-8 text-center">
-            <IconLock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery ? "No passwords found" : "No passwords saved yet"}
-            </h3>
-            <p className="text-gray-500 mb-4">
-              {searchQuery 
-                ? "Try adjusting your search terms"
-                : "Start by generating and saving your first password"
-              }
-            </p>
-            {!searchQuery && (
-              <Link to="/generate">
-                <Button className="bg-sage-500 hover:bg-sage-600">
-                  <IconPlus className="w-4 h-4 mr-2" />
-                  New Password
-                </Button>
-              </Link>
+          {/* Password List */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            {filteredPasswords.length === 0 ? (
+              <div className="p-8 text-center">
+                <IconLock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {searchQuery ? "No passwords found" : "No passwords saved yet"}
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {searchQuery 
+                    ? "Try adjusting your search terms"
+                    : "Start by generating and saving your first password"
+                  }
+                </p>
+                {!searchQuery && (
+                  <Link to="/generate">
+                    <Button className="bg-sage-500 hover:bg-sage-600">
+                      <IconPlus className="w-4 h-4 mr-2" />
+                      New Password
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {filteredPasswords.map((pwd) => (
+                  <div 
+                    key={pwd.id} 
+                    className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedPassword(pwd)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {pwd.account}
+                        </h3>
+                        {pwd.username && (
+                          <p className="text-xs text-gray-500">
+                            Username: {pwd.username}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Added {new Date(pwd.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        className="text-sm text-sage-600 hover:text-sage-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPassword(pwd);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredPasswords.map((pwd) => (
-              <div 
-                key={pwd.id} 
-                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => setSelectedPassword(pwd)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {pwd.account}
-                    </h3>
-                    {pwd.username && (
-                      <p className="text-xs text-gray-500">
-                        Username: {pwd.username}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">
-                      Added {new Date(pwd.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="text-sm text-sage-600 hover:text-sage-700"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPassword(pwd);
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

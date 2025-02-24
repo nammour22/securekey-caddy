@@ -110,6 +110,7 @@ const Index = () => {
   };
 
   const handleDelete = () => {
+    if (!selectedPassword) return;
     setShowDeleteConfirm(true);
   };
 
@@ -121,9 +122,10 @@ const Index = () => {
     setPasswords(updatedPasswords);
     setSelectedPassword(null);
     setShowDeleteConfirm(false);
+    setIsEditing(false); // Make sure we reset the editing state
     
     toast({
-      title: "Deleted",
+      title: "Success",
       description: "Password deleted successfully",
     });
   };
@@ -242,7 +244,16 @@ const Index = () => {
           </Dialog>
 
           {/* Delete Confirmation Dialog */}
-          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialog 
+            open={showDeleteConfirm} 
+            onOpenChange={(open) => {
+              setShowDeleteConfirm(open);
+              if (!open) {
+                // Reset state if user closes dialog without confirming
+                setShowDeleteConfirm(false);
+              }
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -260,11 +271,17 @@ const Index = () => {
           </AlertDialog>
 
           {/* Password Details Dialog */}
-          <Dialog open={!!selectedPassword} onOpenChange={() => {
-            setSelectedPassword(null);
-            setShowPassword(false);
-            setIsEditing(false);
-          }}>
+          <Dialog 
+            open={!!selectedPassword} 
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedPassword(null);
+                setShowPassword(false);
+                setIsEditing(false);
+                setShowDeleteConfirm(false); // Reset delete confirmation when closing
+              }
+            }}
+          >
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>

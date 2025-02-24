@@ -1,15 +1,15 @@
-
 import { motion } from "framer-motion";
 import { 
-  IconPlus, 
-  IconSearch, 
-  IconLock, 
-  IconCopy, 
-  IconTrash, 
-  IconEdit,
-  IconEye,
-  IconEyeOff
-} from "@tabler/icons-react";
+  Plus,
+  Search,
+  Lock,
+  Copy,
+  Trash,
+  Pencil,
+  Eye,
+  EyeOff,
+  Shield
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PasswordDetails {
   id: number;
@@ -43,6 +54,11 @@ const Index = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editDetails, setEditDetails] = useState<PasswordDetails | null>(null);
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [enteredPin, setEnteredPin] = useState("");
+  const [tempSelectedPassword, setTempSelectedPassword] = useState<PasswordDetails | null>(null);
+  const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
 
   useEffect(() => {
     const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
@@ -53,11 +69,61 @@ const Index = () => {
     pwd.account.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handlePasswordSelect = (pwd: PasswordDetails) => {
+    const now = Date.now();
+    const storedPin = localStorage.getItem("vault_pin");
+    
+    if (!storedPin) {
+      toast({
+        title: "Error",
+        description: "Please set up your PIN first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If within 5 minutes of last verification, show password details directly
+    if (lastPinVerification && (now - lastPinVerification) < 5 * 60 * 1000) {
+      setSelectedPassword(pwd);
+      return;
+    }
+
+    setTempSelectedPassword(pwd);
+    setEnteredPin("");
+    setShowPinDialog(true);
+  };
+
+  const verifyPin = () => {
+    const storedPin = localStorage.getItem("vault_pin");
+    
+    if (enteredPin === storedPin) {
+      setLastPinVerification(Date.now());
+      setSelectedPassword(tempSelectedPassword);
+      setShowPinDialog(false);
+      setEnteredPin("");
+    } else {
+      toast({
+        title: "Error",
+        description: "Incorrect PIN",
+        variant: "destructive",
+      });
+      setEnteredPin("");
+    }
+  };
+
   const handleDelete = (id: number) => {
-    const updatedPasswords = passwords.filter(pwd => pwd.id !== id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (!selectedPassword) return;
+    
+    const updatedPasswords = passwords.filter(pwd => pwd.id !== selectedPassword.id);
     localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
     setPasswords(updatedPasswords);
     setSelectedPassword(null);
+    setShowDeleteConfirm(false);
+    
     toast({
       title: "Deleted",
       description: "Password deleted successfully",
@@ -95,7 +161,7 @@ const Index = () => {
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">
-          <IconLock className="w-6 h-6 text-sage-500" />
+          <Lock className="w-6 h-6 text-sage-500" />
           <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
         </div>
         
@@ -122,15 +188,70 @@ const Index = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
-              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
             <Link to="/generate">
               <Button className="bg-sage-500 hover:bg-sage-600">
-                <IconPlus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 New Password
               </Button>
             </Link>
           </div>
+
+          {/* PIN Dialog */}
+          <Dialog open={showPinDialog} onOpenChange={() => {
+            setShowPinDialog(false);
+            setTempSelectedPassword(null);
+            setEnteredPin("");
+          }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Enter PIN</DialogTitle>
+                <DialogDescription>
+                  Please enter your PIN to view password details
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>PIN</Label>
+                  <Input
+                    type="password"
+                    maxLength={4}
+                    value={enteredPin}
+                    onChange={(e) => setEnteredPin(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && enteredPin.length === 4) {
+                        verifyPin();
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={verifyPin} disabled={enteredPin.length !== 4}>
+                  Verify
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the password for {selectedPassword?.account}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Password Details Dialog */}
           <Dialog open={!!selectedPassword} onOpenChange={() => {
@@ -207,7 +328,7 @@ const Index = () => {
                                 size="sm"
                                 onClick={() => copyToClipboard(selectedPassword.username!)}
                               >
-                                <IconCopy className="w-4 h-4" />
+                                <Copy className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -222,7 +343,7 @@ const Index = () => {
                                 size="sm"
                                 onClick={() => copyToClipboard(selectedPassword.email!)}
                               >
-                                <IconCopy className="w-4 h-4" />
+                                <Copy className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -242,9 +363,9 @@ const Index = () => {
                                 onClick={() => setShowPassword(!showPassword)}
                               >
                                 {showPassword ? (
-                                  <IconEyeOff className="w-4 h-4" />
+                                  <EyeOff className="w-4 h-4" />
                                 ) : (
-                                  <IconEye className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 )}
                               </Button>
                               <Button
@@ -252,7 +373,7 @@ const Index = () => {
                                 size="icon"
                                 onClick={() => copyToClipboard(selectedPassword.password)}
                               >
-                                <IconCopy className="w-4 h-4" />
+                                <Copy className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -276,7 +397,7 @@ const Index = () => {
                       variant="destructive"
                       onClick={() => handleDelete(selectedPassword!.id)}
                     >
-                      <IconTrash className="w-4 h-4 mr-2" />
+                      <Trash className="w-4 h-4 mr-2" />
                       Delete
                     </Button>
                   )}
@@ -304,7 +425,7 @@ const Index = () => {
                         setEditDetails(selectedPassword);
                       }}
                     >
-                      <IconEdit className="w-4 h-4 mr-2" />
+                      <Pencil className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
                   )}
@@ -317,7 +438,7 @@ const Index = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             {filteredPasswords.length === 0 ? (
               <div className="p-8 text-center">
-                <IconLock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <Lock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {searchQuery ? "No passwords found" : "No passwords saved yet"}
                 </h3>
@@ -330,7 +451,7 @@ const Index = () => {
                 {!searchQuery && (
                   <Link to="/generate">
                     <Button className="bg-sage-500 hover:bg-sage-600">
-                      <IconPlus className="w-4 h-4 mr-2" />
+                      <Plus className="w-4 h-4 mr-2" />
                       New Password
                     </Button>
                   </Link>
@@ -342,7 +463,7 @@ const Index = () => {
                   <div 
                     key={pwd.id} 
                     className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedPassword(pwd)}
+                    onClick={() => handlePasswordSelect(pwd)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -363,7 +484,7 @@ const Index = () => {
                         className="text-sm text-sage-600 hover:text-sage-700"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedPassword(pwd);
+                          handlePasswordSelect(pwd);
                         }}
                       >
                         View Details

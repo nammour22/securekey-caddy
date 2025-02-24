@@ -1,155 +1,87 @@
-import { motion } from "framer-motion";
-import { 
-  IconArrowLeft, 
-  IconCopy, 
-  IconRefresh, 
-  IconDeviceFloppy,
-  IconLock
-} from "@tabler/icons-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-interface PasswordDetails {
-  id: number;
-  account: string;
-  username?: string;
-  email?: string;
-  notes?: string;
-  password: string;
-  createdAt: string;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Plus, Lock } from "lucide-react";
 
 const Generator = () => {
-  const [passwordLength, setPasswordLength] = useState(16);
+  const [passwordLength, setPasswordLength] = useState(12);
   const [includeUppercase, setIncludeUppercase] = useState(true);
+  const [includeLowercase, setIncludeLowercase] = useState(true);
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSymbols, setIncludeSymbols] = useState(true);
-  const [password, setPassword] = useState("");
-  const [strength, setStrength] = useState("Weak");
-  const [isCopied, setIsCopied] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    generatePassword();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [passwordLength, includeUppercase, includeNumbers, includeSymbols]);
-
-  useEffect(() => {
-    updateStrengthIndicator();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [password]);
+  const [accountName, setAccountName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
 
   const generatePassword = () => {
-    let characterList = "";
+    let characterSet = "";
+    if (includeUppercase) characterSet += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (includeLowercase) characterSet += "abcdefghijklmnopqrstuvwxyz";
+    if (includeNumbers) characterSet += "0123456789";
+    if (includeSymbols) characterSet += "!@#$%^&*()_+~`|}{[]:;?><,./-=";
 
-    if (includeUppercase) {
-      characterList += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    }
-    if (includeNumbers) {
-      characterList += "0123456789";
-    }
-    if (includeSymbols) {
-      characterList += "!@#$%^&*()_+~`|}{[]:;?><,./-=";
-    }
-
-    if (!characterList) {
-      characterList = "abcdefghijklmnopqrstuvwxyz";
-    } else {
-      characterList += "abcdefghijklmnopqrstuvwxyz";
+    if (characterSet === "") {
+      toast({
+        title: "Error",
+        description: "Please select at least one character set.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    let newPassword = "";
+    let password = "";
     for (let i = 0; i < passwordLength; i++) {
-      const characterIndex = Math.round(Math.random() * characterList.length);
-      newPassword += characterList.charAt(characterIndex);
+      const randomIndex = Math.floor(Math.random() * characterSet.length);
+      password += characterSet[randomIndex];
     }
-    setPassword(newPassword);
-    setIsCopied(false);
+
+    setGeneratedPassword(password);
   };
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(password);
-    setIsCopied(true);
+    navigator.clipboard.writeText(generatedPassword);
     toast({
       title: "Copied!",
       description: "Password copied to clipboard",
     });
   };
 
-  const updateStrengthIndicator = () => {
-    let strengthValue = "Weak";
-    if (password.length >= 8) {
-      strengthValue = "Medium";
-    }
-    if (
-      password.length >= 12 &&
-      ((includeUppercase && /[A-Z]/.test(password)) ||
-        (includeNumbers && /[0-9]/.test(password)) ||
-        (includeSymbols && /[^a-zA-Z0-9]/.test(password)))
-    ) {
-      strengthValue = "Strong";
-    }
-    setStrength(strengthValue);
-  };
-
-  const [saveDetails, setSaveDetails] = useState({
-    account: "",
-    username: "",
-    email: "",
-    notes: "",
-  });
-
-  const handleSavePassword = () => {
-    if (!saveDetails.account.trim()) {
+  const savePassword = () => {
+    if (!accountName) {
       toast({
         title: "Error",
-        description: "Please enter an account name",
+        description: "Account name is required to save the password.",
         variant: "destructive",
       });
       return;
     }
 
-    const existingPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
-    
-    const newPassword: PasswordDetails = {
+    const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
+    const newPassword = {
       id: Date.now(),
-      account: saveDetails.account,
-      username: saveDetails.username || undefined,
-      email: saveDetails.email || undefined,
-      notes: saveDetails.notes || undefined,
-      password: password,
+      account: accountName,
+      username: username,
+      email: email,
+      notes: notes,
+      password: generatedPassword,
       createdAt: new Date().toISOString(),
     };
-    
-    localStorage.setItem("passwords", JSON.stringify([...existingPasswords, newPassword]));
-    
+    savedPasswords.push(newPassword);
+    localStorage.setItem("passwords", JSON.stringify(savedPasswords));
     toast({
-      title: "Success",
+      title: "Saved!",
       description: "Password saved successfully",
     });
-    
-    setSaveDialogOpen(false);
-    setSaveDetails({
-      account: "",
-      username: "",
-      email: "",
-      notes: "",
-    });
-    
     navigate("/");
   };
 
@@ -158,176 +90,157 @@ const Generator = () => {
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">
-          <IconLock className="w-6 h-6 text-sage-500" />
+          <Lock className="w-6 h-6 text-sage-500" />
           <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
         </div>
         
         <nav className="space-y-2">
-          <Link 
-            to="/"
+          <a 
+            href="/"
             className="block w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100"
           >
             All Items
-          </Link>
+          </a>
         </nav>
       </div>
 
       {/* Main Content */}
       <div className="ml-64 p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+            Password Generator
+          </h1>
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Password Generator
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Generate secure, random passwords with custom requirements.
-            </p>
-            
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            <div className="mb-4">
+              <Label htmlFor="passwordLength" className="block text-sm font-medium text-gray-700">
+                Password Length ({passwordLength})
+              </Label>
+              <Slider
+                id="passwordLength"
+                defaultValue={[passwordLength]}
+                max={32}
+                min={8}
+                step={1}
+                onValueChange={(value) => setPasswordLength(value[0])}
+                className="mt-2"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <label className="inline-flex items-center space-x-2 cursor-pointer">
                 <Input
-                  type="text"
-                  value={password}
-                  readOnly
-                  className="flex-1 bg-gray-100 border-gray-300 rounded-md px-4 py-2 text-gray-700 mr-4"
+                  type="checkbox"
+                  checked={includeUppercase}
+                  onChange={() => setIncludeUppercase(!includeUppercase)}
+                  className="rounded accent-sage-500 h-5 w-5"
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={copyToClipboard}
-                  className="hover:bg-gray-200"
-                >
-                  <IconCopy className="w-4 h-4" />
+                <span className="text-gray-700">Include Uppercase</span>
+              </label>
+
+              <label className="inline-flex items-center space-x-2 cursor-pointer">
+                <Input
+                  type="checkbox"
+                  checked={includeLowercase}
+                  onChange={() => setIncludeLowercase(!includeLowercase)}
+                  className="rounded accent-sage-500 h-5 w-5"
+                />
+                <span className="text-gray-700">Include Lowercase</span>
+              </label>
+
+              <label className="inline-flex items-center space-x-2 cursor-pointer">
+                <Input
+                  type="checkbox"
+                  checked={includeNumbers}
+                  onChange={() => setIncludeNumbers(!includeNumbers)}
+                  className="rounded accent-sage-500 h-5 w-5"
+                />
+                <span className="text-gray-700">Include Numbers</span>
+              </label>
+
+              <label className="inline-flex items-center space-x-2 cursor-pointer">
+                <Input
+                  type="checkbox"
+                  checked={includeSymbols}
+                  onChange={() => setIncludeSymbols(!includeSymbols)}
+                  className="rounded accent-sage-500 h-5 w-5"
+                />
+                <span className="text-gray-700">Include Symbols</span>
+              </label>
+            </div>
+
+            <Button onClick={generatePassword} className="w-full bg-sage-500 hover:bg-sage-600">
+              Generate Password
+            </Button>
+
+            {generatedPassword && (
+              <div className="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <Input
+                    type="text"
+                    value={generatedPassword}
+                    readOnly
+                    className="bg-transparent border-none text-gray-700 focus:outline-none"
+                  />
+                  <Button variant="ghost" onClick={copyToClipboard}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {generatedPassword && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Save Password</h2>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="accountName">Account Name</Label>
+                  <Input
+                    type="text"
+                    id="accountName"
+                    placeholder="e.g., Google, Facebook"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="username">Username (optional)</Label>
+                  <Input
+                    type="text"
+                    id="username"
+                    placeholder="e.g., johndoe123"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email (optional)</Label>
+                  <Input
+                    type="email"
+                    id="email"
+                    placeholder="e.g., john.doe@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="e.g., Security questions, recovery info"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+                <Button onClick={savePassword} className="w-full bg-sage-500 hover:bg-sage-600">
+                  Save to Vault
                 </Button>
               </div>
-
-              <div className="flex items-center justify-between">
-                <div className="text-gray-700 font-medium">Password Strength:</div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span className="text-sm text-gray-500">{strength}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-gray-700 font-medium">Options:</div>
-                <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      checked={includeUppercase}
-                      onChange={(e) => setIncludeUppercase(e.target.checked)}
-                      className="rounded-sm text-sage-500 focus:ring-sage-500"
-                    />
-                    <span className="text-sm text-gray-500">Include Uppercase</span>
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      checked={includeNumbers}
-                      onChange={(e) => setIncludeNumbers(e.target.checked)}
-                      className="rounded-sm text-sage-500 focus:ring-sage-500"
-                    />
-                    <span className="text-sm text-gray-500">Include Numbers</span>
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="checkbox"
-                      checked={includeSymbols}
-                      onChange={(e) => setIncludeSymbols(e.target.checked)}
-                      className="rounded-sm text-sage-500 focus:ring-sage-500"
-                    />
-                    <span className="text-sm text-gray-500">Include Symbols</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-gray-700 font-medium">Password Length:</div>
-                <input
-                  type="range"
-                  min="8"
-                  max="32"
-                  value={passwordLength}
-                  onChange={(e) => setPasswordLength(Number(e.target.value))}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="text-sm text-gray-500 mt-1">
-                  Length: {passwordLength} characters
-                </div>
-              </div>
-
-              <Button className="bg-sage-500 hover:bg-sage-600" onClick={() => setSaveDialogOpen(true)}>
-                <IconPlus className="w-4 h-4 mr-2" />
-                Save Password
-              </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
-
-      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Save Password</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="account">Account Name *</Label>
-              <Input
-                id="account"
-                placeholder="e.g., Facebook, Twitter, Gmail..."
-                value={saveDetails.account}
-                onChange={(e) => setSaveDetails(prev => ({ ...prev, account: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Username (Optional)</Label>
-              <Input
-                id="username"
-                placeholder="Your username"
-                value={saveDetails.username}
-                onChange={(e) => setSaveDetails(prev => ({ ...prev, username: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email (Optional)</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Your email"
-                value={saveDetails.email}
-                onChange={(e) => setSaveDetails(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional notes..."
-                value={saveDetails.notes}
-                onChange={(e) => setSaveDetails(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <Input value={password} readOnly />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSavePassword}>
-              Save Password
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

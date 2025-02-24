@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { IconArrowLeft, IconCopy, IconTrash } from "@tabler/icons-react";
+import { ArrowLeft, Lock, Copy, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ const Vault = () => {
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">
-          <IconLock className="w-6 h-6 text-sage-500" />
+          <Lock className="w-6 h-6 text-sage-500" />
           <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
         </div>
         
@@ -65,7 +65,7 @@ const Vault = () => {
             to="/"
             className="inline-flex items-center text-sage-500 hover:text-sage-600 mb-6"
           >
-            <IconArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-2" />
             Back to All Items
           </Link>
 
@@ -105,7 +105,7 @@ const Vault = () => {
                           onClick={() => copyToClipboard(pwd.password)}
                           className="hover:bg-gray-200"
                         >
-                          <IconCopy className="w-4 h-4" />
+                          <Copy className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -113,7 +113,7 @@ const Vault = () => {
                           onClick={() => deletePassword(pwd.id)}
                           className="hover:bg-gray-200 hover:text-red-500"
                         >
-                          <IconTrash className="w-4 h-4" />
+                          <Trash className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>

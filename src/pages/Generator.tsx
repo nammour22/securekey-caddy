@@ -1,16 +1,35 @@
 import { motion } from "framer-motion";
-import {
-  IconCopy,
-  IconSettings,
-  IconShieldCheck,
-  IconPlus,
-  IconLock,
+import { 
+  IconArrowLeft, 
+  IconCopy, 
+  IconRefresh, 
+  IconDeviceFloppy,
+  IconLock
 } from "@tabler/icons-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+interface PasswordDetails {
+  id: number;
+  account: string;
+  username?: string;
+  email?: string;
+  notes?: string;
+  password: string;
+  createdAt: string;
+}
 
 const Generator = () => {
   const [passwordLength, setPasswordLength] = useState(16);
@@ -20,9 +39,9 @@ const Generator = () => {
   const [password, setPassword] = useState("");
   const [strength, setStrength] = useState("Weak");
   const [isCopied, setIsCopied] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [accountName, setAccountName] = useState("");
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     generatePassword();
@@ -87,34 +106,51 @@ const Generator = () => {
     setStrength(strengthValue);
   };
 
-  const handleSavePassword = () => {
-    setIsDialogOpen(true);
-  };
+  const [saveDetails, setSaveDetails] = useState({
+    account: "",
+    username: "",
+    email: "",
+    notes: "",
+  });
 
-  const savePassword = () => {
-    if (!accountName) {
+  const handleSavePassword = () => {
+    if (!saveDetails.account.trim()) {
       toast({
         title: "Error",
-        description: "Account name is required",
+        description: "Please enter an account name",
+        variant: "destructive",
       });
       return;
     }
 
-    const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
-    const newPassword = {
+    const existingPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
+    
+    const newPassword: PasswordDetails = {
       id: Date.now(),
-      account: accountName,
+      account: saveDetails.account,
+      username: saveDetails.username || undefined,
+      email: saveDetails.email || undefined,
+      notes: saveDetails.notes || undefined,
       password: password,
       createdAt: new Date().toISOString(),
     };
-    savedPasswords.push(newPassword);
-    localStorage.setItem("passwords", JSON.stringify(savedPasswords));
-    setIsDialogOpen(false);
-    setAccountName("");
+    
+    localStorage.setItem("passwords", JSON.stringify([...existingPasswords, newPassword]));
+    
     toast({
-      title: "Saved!",
-      description: "Password saved to vault",
+      title: "Success",
+      description: "Password saved successfully",
     });
+    
+    setSaveDialogOpen(false);
+    setSaveDetails({
+      account: "",
+      username: "",
+      email: "",
+      notes: "",
+    });
+    
+    navigate("/");
   };
 
   return (
@@ -225,7 +261,7 @@ const Generator = () => {
                 </div>
               </div>
 
-              <Button className="bg-sage-500 hover:bg-sage-600" onClick={handleSavePassword}>
+              <Button className="bg-sage-500 hover:bg-sage-600" onClick={() => setSaveDialogOpen(true)}>
                 <IconPlus className="w-4 h-4 mr-2" />
                 Save Password
               </Button>
@@ -234,36 +270,64 @@ const Generator = () => {
         </div>
       </div>
 
-      {isDialogOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center"
-        >
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Save Password</h2>
-            <p className="text-gray-600 mb-6">
-              Enter an account name to save this password to your vault.
-            </p>
-            <Input
-              type="text"
-              placeholder="Account Name"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              className="mb-4"
-            />
-            <div className="flex justify-end space-x-4">
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button className="bg-sage-500 hover:bg-sage-600" onClick={savePassword}>
-                Save
-              </Button>
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="account">Account Name *</Label>
+              <Input
+                id="account"
+                placeholder="e.g., Facebook, Twitter, Gmail..."
+                value={saveDetails.account}
+                onChange={(e) => setSaveDetails(prev => ({ ...prev, account: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username (Optional)</Label>
+              <Input
+                id="username"
+                placeholder="Your username"
+                value={saveDetails.username}
+                onChange={(e) => setSaveDetails(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email (Optional)</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Your email"
+                value={saveDetails.email}
+                onChange={(e) => setSaveDetails(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any additional notes..."
+                value={saveDetails.notes}
+                onChange={(e) => setSaveDetails(prev => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <Input value={password} readOnly />
             </div>
           </div>
-        </motion.div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePassword}>
+              Save Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

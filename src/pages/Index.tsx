@@ -109,7 +109,7 @@ const Index = () => {
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = () => {
     setShowDeleteConfirm(true);
   };
 
@@ -401,7 +401,7 @@ const Index = () => {
                   {!isEditing && (
                     <Button
                       variant="destructive"
-                      onClick={() => handleDelete(selectedPassword!.id)}
+                      onClick={handleDelete}
                     >
                       <Trash className="w-4 h-4 mr-2" />
                       Delete

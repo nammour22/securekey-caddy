@@ -101,32 +101,24 @@ const Index = () => {
   const confirmDelete = () => {
     if (!selectedPassword) return;
     
-    try {
-      // Get fresh data from localStorage
-      const currentPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
-      const updatedPasswords = currentPasswords.filter((pwd: PasswordDetails) => pwd.id !== selectedPassword.id);
-      
-      // Update localStorage first
-      localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
-      
-      // Then update state and close dialogs
-      setPasswords(updatedPasswords);
-      setShowDeleteConfirm(false);
-      setSelectedPassword(null);
-      setIsEditing(false);
-      
-      toast({
-        title: "Success",
-        description: "Password deleted successfully",
-      });
-    } catch (e) {
-      console.error("Error during deletion:", e);
-      toast({
-        title: "Error",
-        description: "Failed to delete password",
-        variant: "destructive",
-      });
-    }
+    // Get current passwords from state
+    const updatedPasswords = passwords.filter(pwd => pwd.id !== selectedPassword.id);
+    
+    // Update localStorage
+    localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
+    
+    // Update state
+    setPasswords(updatedPasswords);
+    
+    // Close all dialogs
+    setShowDeleteConfirm(false);
+    setSelectedPassword(null);
+    setIsEditing(false);
+    
+    toast({
+      title: "Success",
+      description: "Password deleted successfully",
+    });
   };
 
   const handlePasswordSelect = (pwd: PasswordDetails) => {
@@ -285,15 +277,7 @@ const Index = () => {
           </Dialog>
 
           {/* Delete Confirmation Dialog */}
-          <AlertDialog 
-            open={showDeleteConfirm} 
-            onOpenChange={(open) => {
-              setShowDeleteConfirm(open);
-              if (!open) {
-                setShowDeleteConfirm(false);
-              }
-            }}
-          >
+          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -302,12 +286,11 @@ const Index = () => {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>
+                  Cancel
+                </AlertDialogCancel>
                 <AlertDialogAction 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    confirmDelete();
-                  }} 
+                  onClick={confirmDelete}
                   className="bg-red-500 hover:bg-red-600"
                 >
                   Delete
@@ -464,7 +447,7 @@ const Index = () => {
                   {!isEditing && (
                     <Button
                       variant="destructive"
-                      onClick={handleDelete}
+                      onClick={() => handleDelete()}
                     >
                       <Trash className="w-4 h-4 mr-2" />
                       Delete

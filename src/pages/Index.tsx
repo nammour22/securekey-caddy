@@ -62,14 +62,72 @@ const Index = () => {
   const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
   const [showPinSetup, setShowPinSetup] = useState(false);
 
+  // Load passwords from localStorage
   useEffect(() => {
-    const savedPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
-    setPasswords(savedPasswords);
-  }, []);
+    const loadPasswords = () => {
+      const savedPasswords = localStorage.getItem("passwords");
+      if (savedPasswords) {
+        try {
+          const parsed = JSON.parse(savedPasswords);
+          setPasswords(parsed);
+        } catch (e) {
+          console.error("Error loading passwords:", e);
+          setPasswords([]);
+        }
+      }
+    };
+    loadPasswords();
+  }, []); // Only run on mount
 
-  const filteredPasswords = passwords.filter(pwd =>
-    pwd.account.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const savePasswords = (newPasswords: PasswordDetails[]) => {
+    try {
+      localStorage.setItem("passwords", JSON.stringify(newPasswords));
+      setPasswords(newPasswords);
+    } catch (e) {
+      console.error("Error saving passwords:", e);
+      toast({
+        title: "Error",
+        description: "Failed to save changes",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (!selectedPassword) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (!selectedPassword) return;
+    
+    try {
+      // Get fresh data from localStorage
+      const currentPasswords = JSON.parse(localStorage.getItem("passwords") || "[]");
+      const updatedPasswords = currentPasswords.filter((pwd: PasswordDetails) => pwd.id !== selectedPassword.id);
+      
+      // Update localStorage first
+      localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
+      
+      // Then update state and close dialogs
+      setPasswords(updatedPasswords);
+      setShowDeleteConfirm(false);
+      setSelectedPassword(null);
+      setIsEditing(false);
+      
+      toast({
+        title: "Success",
+        description: "Password deleted successfully",
+      });
+    } catch (e) {
+      console.error("Error during deletion:", e);
+      toast({
+        title: "Error",
+        description: "Failed to delete password",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePasswordSelect = (pwd: PasswordDetails) => {
     const now = Date.now();
@@ -109,28 +167,6 @@ const Index = () => {
     }
   };
 
-  const handleDelete = () => {
-    if (!selectedPassword) return;
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = () => {
-    if (!selectedPassword) return;
-    
-    const updatedPasswords = passwords.filter(pwd => pwd.id !== selectedPassword.id);
-    setPasswords(updatedPasswords); // Update state first
-    localStorage.setItem("passwords", JSON.stringify(updatedPasswords)); // Then update storage
-    
-    setShowDeleteConfirm(false);
-    setSelectedPassword(null); // Close the details dialog
-    setIsEditing(false);
-    
-    toast({
-      title: "Success",
-      description: "Password deleted successfully",
-    });
-  };
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -156,6 +192,10 @@ const Index = () => {
       description: "Password details updated successfully",
     });
   };
+
+  const filteredPasswords = passwords.filter(pwd =>
+    pwd.account.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
@@ -247,7 +287,12 @@ const Index = () => {
           {/* Delete Confirmation Dialog */}
           <AlertDialog 
             open={showDeleteConfirm} 
-            onOpenChange={(open) => setShowDeleteConfirm(open)}
+            onOpenChange={(open) => {
+              setShowDeleteConfirm(open);
+              if (!open) {
+                setShowDeleteConfirm(false);
+              }
+            }}
           >
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -257,8 +302,14 @@ const Index = () => {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    confirmDelete();
+                  }} 
+                  className="bg-red-500 hover:bg-red-600"
+                >
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -478,8 +529,10 @@ const Index = () => {
             ) : (
               <div className="divide-y divide-gray-200">
                 {filteredPasswords.map((pwd) => (
-                  <div 
+                  <motion.div 
                     key={pwd.id} 
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => handlePasswordSelect(pwd)}
                   >
@@ -508,7 +561,7 @@ const Index = () => {
                         View Details
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

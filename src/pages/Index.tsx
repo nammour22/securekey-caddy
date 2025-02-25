@@ -62,22 +62,25 @@ const Index = () => {
   const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
   const [showPinSetup, setShowPinSetup] = useState(false);
 
+  const loadPasswords = () => {
+    const savedPasswords = localStorage.getItem("passwords");
+    if (savedPasswords) {
+      try {
+        const parsed = JSON.parse(savedPasswords);
+        setPasswords(parsed);
+      } catch (e) {
+        console.error("Error loading passwords:", e);
+        setPasswords([]);
+      }
+    } else {
+      setPasswords([]);
+    }
+  };
+
   // Load passwords from localStorage
   useEffect(() => {
-    const loadPasswords = () => {
-      const savedPasswords = localStorage.getItem("passwords");
-      if (savedPasswords) {
-        try {
-          const parsed = JSON.parse(savedPasswords);
-          setPasswords(parsed);
-        } catch (e) {
-          console.error("Error loading passwords:", e);
-          setPasswords([]);
-        }
-      }
-    };
     loadPasswords();
-  }, []); // Only run on mount
+  }, []); 
 
   const savePasswords = (newPasswords: PasswordDetails[]) => {
     try {
@@ -99,26 +102,54 @@ const Index = () => {
   };
 
   const confirmDelete = () => {
-    if (!selectedPassword) return;
-    
-    // Get current passwords from state
-    const updatedPasswords = passwords.filter(pwd => pwd.id !== selectedPassword.id);
-    
-    // Update localStorage
-    localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
-    
-    // Update state
-    setPasswords(updatedPasswords);
-    
-    // Close all dialogs
-    setShowDeleteConfirm(false);
-    setSelectedPassword(null);
-    setIsEditing(false);
-    
-    toast({
-      title: "Success",
-      description: "Password deleted successfully",
-    });
+    if (!selectedPassword) {
+      console.log("No password selected for deletion");
+      return;
+    }
+
+    // Get fresh data from localStorage
+    const savedPasswords = localStorage.getItem("passwords");
+    if (!savedPasswords) {
+      console.log("No passwords found in localStorage");
+      return;
+    }
+
+    try {
+      // Parse current passwords
+      const currentPasswords = JSON.parse(savedPasswords);
+      
+      // Filter out the password to delete
+      const updatedPasswords = currentPasswords.filter(
+        (pwd: PasswordDetails) => pwd.id !== selectedPassword.id
+      );
+
+      // Save back to localStorage
+      localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
+
+      // Force reload of passwords from localStorage
+      loadPasswords();
+
+      // Reset UI state
+      setShowDeleteConfirm(false);
+      setSelectedPassword(null);
+      setIsEditing(false);
+      setShowPassword(false);
+
+      // Show success message
+      toast({
+        title: "Password Deleted",
+        description: "The password has been successfully deleted.",
+      });
+
+      console.log("Password deleted successfully", selectedPassword.id);
+    } catch (error) {
+      console.error("Error during password deletion:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete password. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePasswordSelect = (pwd: PasswordDetails) => {

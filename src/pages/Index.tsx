@@ -8,7 +8,6 @@ import {
   Pencil,
   Eye,
   EyeOff,
-  Shield
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -36,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import PinSetup from "@/components/PinSetup";
+import { passwordManager } from "@/services/passwordManager";
 
 interface PasswordDetails {
   id: number;
@@ -62,39 +62,14 @@ const Index = () => {
   const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
   const [showPinSetup, setShowPinSetup] = useState(false);
 
-  const loadPasswords = () => {
-    const savedPasswords = localStorage.getItem("passwords");
-    if (savedPasswords) {
-      try {
-        const parsed = JSON.parse(savedPasswords);
-        setPasswords(parsed);
-      } catch (e) {
-        console.error("Error loading passwords:", e);
-        setPasswords([]);
-      }
-    } else {
-      setPasswords([]);
-    }
-  };
-
-  // Load passwords from localStorage
+  // Load passwords from passwordManager
   useEffect(() => {
+    const loadPasswords = () => {
+      const allPasswords = passwordManager.getAllPasswords();
+      setPasswords(allPasswords);
+    };
     loadPasswords();
-  }, []); 
-
-  const savePasswords = (newPasswords: PasswordDetails[]) => {
-    try {
-      localStorage.setItem("passwords", JSON.stringify(newPasswords));
-      setPasswords(newPasswords);
-    } catch (e) {
-      console.error("Error saving passwords:", e);
-      toast({
-        title: "Error",
-        description: "Failed to save changes",
-        variant: "destructive",
-      });
-    }
-  };
+  }, []);
 
   const handleDelete = () => {
     if (!selectedPassword) return;
@@ -102,48 +77,26 @@ const Index = () => {
   };
 
   const confirmDelete = () => {
-    if (!selectedPassword) {
-      console.log("No password selected for deletion");
-      return;
-    }
-
-    // Get fresh data from localStorage
-    const savedPasswords = localStorage.getItem("passwords");
-    if (!savedPasswords) {
-      console.log("No passwords found in localStorage");
-      return;
-    }
+    if (!selectedPassword) return;
 
     try {
-      // Parse current passwords
-      const currentPasswords = JSON.parse(savedPasswords);
+      // Delete password and get updated list
+      const updatedPasswords = passwordManager.deletePassword(selectedPassword.id);
       
-      // Filter out the password to delete
-      const updatedPasswords = currentPasswords.filter(
-        (pwd: PasswordDetails) => pwd.id !== selectedPassword.id
-      );
-
-      // Save back to localStorage
-      localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
-
-      // Force reload of passwords from localStorage
-      loadPasswords();
-
+      // Update state with new password list
+      setPasswords(updatedPasswords);
+      
       // Reset UI state
       setShowDeleteConfirm(false);
       setSelectedPassword(null);
       setIsEditing(false);
       setShowPassword(false);
 
-      // Show success message
       toast({
-        title: "Password Deleted",
-        description: "The password has been successfully deleted.",
+        title: "Success",
+        description: "Password deleted successfully",
       });
-
-      console.log("Password deleted successfully", selectedPassword.id);
     } catch (error) {
-      console.error("Error during password deletion:", error);
       toast({
         title: "Error",
         description: "Failed to delete password. Please try again.",
@@ -201,19 +154,23 @@ const Index = () => {
   const handleSaveEdit = () => {
     if (!editDetails) return;
     
-    const updatedPasswords = passwords.map(pwd => 
-      pwd.id === editDetails.id ? editDetails : pwd
-    );
-    
-    localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
-    setPasswords(updatedPasswords);
-    setSelectedPassword(editDetails);
-    setIsEditing(false);
-    
-    toast({
-      title: "Updated",
-      description: "Password details updated successfully",
-    });
+    try {
+      const updatedPasswords = passwordManager.updatePassword(editDetails.id, editDetails);
+      setPasswords(updatedPasswords);
+      setSelectedPassword(editDetails);
+      setIsEditing(false);
+      
+      toast({
+        title: "Updated",
+        description: "Password details updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update password details",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredPasswords = passwords.filter(pwd =>

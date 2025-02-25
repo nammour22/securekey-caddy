@@ -118,11 +118,12 @@ const Index = () => {
     if (!selectedPassword) return;
     
     const updatedPasswords = passwords.filter(pwd => pwd.id !== selectedPassword.id);
-    localStorage.setItem("passwords", JSON.stringify(updatedPasswords));
-    setPasswords(updatedPasswords);
-    setSelectedPassword(null);
+    setPasswords(updatedPasswords); // Update state first
+    localStorage.setItem("passwords", JSON.stringify(updatedPasswords)); // Then update storage
+    
     setShowDeleteConfirm(false);
-    setIsEditing(false); // Make sure we reset the editing state
+    setSelectedPassword(null); // Close the details dialog
+    setIsEditing(false);
     
     toast({
       title: "Success",
@@ -246,13 +247,7 @@ const Index = () => {
           {/* Delete Confirmation Dialog */}
           <AlertDialog 
             open={showDeleteConfirm} 
-            onOpenChange={(open) => {
-              setShowDeleteConfirm(open);
-              if (!open) {
-                // Reset state if user closes dialog without confirming
-                setShowDeleteConfirm(false);
-              }
-            }}
+            onOpenChange={(open) => setShowDeleteConfirm(open)}
           >
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -262,7 +257,7 @@ const Index = () => {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
                   Delete
                 </AlertDialogAction>
@@ -278,7 +273,7 @@ const Index = () => {
                 setSelectedPassword(null);
                 setShowPassword(false);
                 setIsEditing(false);
-                setShowDeleteConfirm(false); // Reset delete confirmation when closing
+                setShowDeleteConfirm(false);
               }
             }}
           >

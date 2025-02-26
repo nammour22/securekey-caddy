@@ -8,6 +8,7 @@ import {
   Pencil,
   Eye,
   EyeOff,
+  Menu,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -34,6 +35,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import PinSetup from "@/components/PinSetup";
 import { passwordManager } from "@/services/passwordManager";
 
@@ -61,6 +67,7 @@ const Index = () => {
   const [tempSelectedPassword, setTempSelectedPassword] = useState<PasswordDetails | null>(null);
   const [lastPinVerification, setLastPinVerification] = useState<number | null>(null);
   const [showPinSetup, setShowPinSetup] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Load passwords from passwordManager
   useEffect(() => {
@@ -187,13 +194,42 @@ const Index = () => {
           }
         }} />
       )}
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 p-4">
+      {/* Mobile Sidebar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Lock className="w-6 h-6 text-sage-500" />
+            <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
+          </div>
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64">
+              <div className="py-4">
+                <div className="flex items-center space-x-2 mb-8">
+                  <Lock className="w-6 h-6 text-sage-500" />
+                  <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
+                </div>
+                <nav className="space-y-2">
+                  <Link to="/" className="block w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100">
+                    All Items
+                  </Link>
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:fixed md:left-0 md:top-0 md:h-screen md:w-64 md:flex md:flex-col bg-white border-r border-gray-200 p-4">
         <div className="flex items-center space-x-2 mb-8">
           <Lock className="w-6 h-6 text-sage-500" />
           <h1 className="text-xl font-semibold text-gray-900">SecureVault</h1>
         </div>
-        
         <nav className="space-y-2">
           <Link 
             to="/"
@@ -205,10 +241,10 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 p-6">
+      <div className="md:ml-64 p-6 pt-20 md:pt-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
               <Input
                 type="text"
@@ -220,7 +256,7 @@ const Index = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
             <Link to="/generate">
-              <Button className="bg-sage-500 hover:bg-sage-600">
+              <Button className="w-full md:w-auto bg-sage-500 hover:bg-sage-600">
                 <Plus className="w-4 h-4 mr-2" />
                 New Password
               </Button>
